@@ -25,6 +25,7 @@ function makeScheduleModule(deltaOrbitNumber: number | null, deltaOrbitAngle: nu
     relative_time: null,
     delta_orbit_number: deltaOrbitNumber,
     delta_orbit_angle: deltaOrbitAngle,
+    upload: 'LIVE',
     created_at: '2026-01-01T00:00:00Z'
   };
 }
@@ -34,7 +35,6 @@ const opsModule: Module = {
   module_group_id: 1,
   name: 'Test OPS module',
   type: 'OPS',
-  upload: 'LIVE',
   created_at: '2026-01-01T00:00:00Z'
 };
 

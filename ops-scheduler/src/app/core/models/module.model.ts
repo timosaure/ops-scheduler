@@ -11,7 +11,6 @@ export interface Module {
   module_group_id: number;
   name: string;
   type: ModuleType;
-  upload: ModuleUpload;
   created_at: string;
 }
 
@@ -19,13 +18,11 @@ export interface ModuleInsert {
   module_group_id: number;
   name: string;
   type: ModuleType;
-  upload: ModuleUpload;
 }
 
 export interface ModuleUpdate {
   name?: string;
   type?: ModuleType;
-  upload?: ModuleUpload;
 }
 
 export interface ModuleWithGroup extends Module {

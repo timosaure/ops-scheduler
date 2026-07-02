@@ -135,7 +135,7 @@ function buildCommandsSheet(
       group: event.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL,
       module: event.scheduleModule.module.name,
       subschedule: event.scheduleModule.module.module_group?.subschedule,
-      upload: event.scheduleModule.module.upload,
+      upload: event.scheduleModule.upload,
       command: event.command.name,
     });
     row.getCell('absoluteTime').numFmt = DATE_FORMAT;
@@ -262,7 +262,7 @@ function buildTimelineSheet(
 
     if (endRow > startRow) {
       const secondLine = sheet.getRow(startRow + 1);
-      secondLine.getCell(columns.nameKey).value = block.scheduleModule.module.upload;
+      secondLine.getCell(columns.nameKey).value = block.scheduleModule.upload;
       secondLine.getCell(columns.timeKey).value = formatDurationSeconds(
         block.endSeconds - block.startSeconds,
       );

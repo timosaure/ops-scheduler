@@ -1,4 +1,4 @@
-import { Module } from './module.model';
+import { Module, ModuleUpload } from './module.model';
 
 /** relative_time is an ISO 8601 duration string (e.g. "PT1H2M3.456S"), as serialized by Postgres's `interval` type. */
 export interface ScheduleModule {
@@ -8,6 +8,7 @@ export interface ScheduleModule {
   relative_time: string | null;
   delta_orbit_number: number | null;
   delta_orbit_angle: number | null;
+  upload: ModuleUpload;
   created_at: string;
 }
 
@@ -21,6 +22,7 @@ export interface ScheduleModuleInsert {
   relative_time?: string | null;
   delta_orbit_number?: number | null;
   delta_orbit_angle?: number | null;
+  upload: ModuleUpload;
 }
 
 export interface ScheduleModuleUpdate {
@@ -28,4 +30,5 @@ export interface ScheduleModuleUpdate {
   relative_time?: string | null;
   delta_orbit_number?: number | null;
   delta_orbit_angle?: number | null;
+  upload?: ModuleUpload;
 }

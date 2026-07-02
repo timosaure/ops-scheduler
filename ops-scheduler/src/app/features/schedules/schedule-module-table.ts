@@ -14,7 +14,7 @@ import {
 import { CellSelectionModule, ClipboardModule } from 'ag-grid-enterprise';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 
-import { ModuleWithGroup } from '../../core/models/module.model';
+import { MODULE_UPLOADS, ModuleWithGroup } from '../../core/models/module.model';
 import {
   ScheduleModuleInsert,
   ScheduleModuleUpdate,
@@ -92,6 +92,14 @@ export class ScheduleModuleTable {
       headerName: 'Subschedule',
       valueGetter: (params) => params.data?.module.module_group?.subschedule ?? '',
       flex: 1
+    },
+    {
+      field: 'upload',
+      headerName: 'Upload',
+      editable: true,
+      flex: 1,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: { values: MODULE_UPLOADS }
     },
     {
       field: 'relative_time',
@@ -172,6 +180,7 @@ export class ScheduleModuleTable {
     const insert: ScheduleModuleInsert = {
       schedule_id: this.scheduleId(),
       module_id: module.id,
+      upload: 'NOT_LIVE',
       ...(module.type === 'MTL'
         ? { relative_time: 'PT0S' }
         : { delta_orbit_number: 0, delta_orbit_angle: 0 })
