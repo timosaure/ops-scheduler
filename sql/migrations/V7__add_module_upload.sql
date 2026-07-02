@@ -1,0 +1,6 @@
+CREATE TYPE module_upload AS ENUM ('LIVE', 'NOT_LIVE');
+
+ALTER TABLE module
+    ADD COLUMN upload module_upload NOT NULL DEFAULT 'NOT_LIVE';
+
+ALTER TABLE module ALTER COLUMN upload DROP DEFAULT;

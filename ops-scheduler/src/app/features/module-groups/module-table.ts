@@ -12,7 +12,7 @@ import { CellSelectionModule, ClipboardModule } from 'ag-grid-enterprise';
 import { Component, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { MODULE_TYPES, Module, ModuleUpdate } from '../../core/models/module.model';
+import { MODULE_TYPES, MODULE_UPLOADS, Module, ModuleUpdate } from '../../core/models/module.model';
 import { ModuleService } from '../../core/services/module.service';
 import { extractErrorMessage } from '../../core/util/http-error';
 
@@ -68,6 +68,14 @@ export class ModuleTable {
       valueParser: (params) => Number(params.newValue)
     },
     {
+      field: 'upload',
+      headerName: 'Upload',
+      editable: true,
+      flex: 1,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: { values: MODULE_UPLOADS }
+    },
+    {
       colId: ACTIONS_COLUMN_ID,
       headerName: '',
       width: 160,
@@ -113,7 +121,8 @@ export class ModuleTable {
         module_group_id: this.groupId(),
         name: 'New module',
         type: 'MTL',
-        subschedule: 0
+        subschedule: 0,
+        upload: 'NOT_LIVE'
       })
       .subscribe({
         next: (created) => {

@@ -83,6 +83,7 @@ function buildCommandsSheet(
     { header: 'Module group', key: 'group', width: 20 },
     { header: 'Module', key: 'module', width: 20 },
     { header: 'Subschedule', key: 'subschedule', width: 12 },
+    { header: 'Upload', key: 'upload', width: 12 },
     { header: 'Command', key: 'command', width: 28 }
   ];
   sheet.getRow(1).font = { bold: true };
@@ -97,6 +98,7 @@ function buildCommandsSheet(
       group: event.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL,
       module: event.scheduleModule.module.name,
       subschedule: event.scheduleModule.module.subschedule,
+      upload: event.scheduleModule.module.upload,
       command: event.command.name
     });
     row.getCell('absoluteTime').numFmt = DATE_FORMAT;
