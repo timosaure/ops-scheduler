@@ -6,6 +6,8 @@ import {
   ColDef,
   GetRowIdParams,
   ModuleRegistry,
+  ValueFormatterParams,
+  ValueParserParams,
   themeQuartz
 } from 'ag-grid-community';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
@@ -14,6 +16,7 @@ import { ModuleType } from '../../core/models/module.model';
 import { Command, CommandUpdate } from '../../core/models/command.model';
 import { CommandService } from '../../core/services/command.service';
 import { extractErrorMessage } from '../../core/util/http-error';
+import { formatRelativeTime, INVALID_RELATIVE_TIME, parseRelativeTime } from '../../core/util/orbit-time';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -46,32 +49,44 @@ export class CommandTable {
   };
 
   readonly positionField = computed<EditableField>(() =>
-    this.moduleType() === 'MTL' ? 'relative_time_seconds' : 'relative_orbit_angle'
+    this.moduleType() === 'MTL' ? 'relative_time' : 'relative_orbit_angle'
   );
 
-  readonly columnDefs = computed<ColDef<Command>[]>(() => [
-    { field: 'name', headerName: 'Name', editable: true, flex: 2 },
-    {
-      field: this.positionField(),
-      headerName:
-        this.moduleType() === 'MTL' ? 'Relative time (s)' : 'Relative orbit angle (°)',
-      editable: true,
-      flex: 1,
-      cellEditor: 'agNumberCellEditor',
-      valueParser: (params) => Number(params.newValue)
-    },
-    {
-      colId: ACTIONS_COLUMN_ID,
-      headerName: '',
-      width: 90,
-      editable: false,
-      sortable: false,
-      filter: false,
-      resizable: false,
-      cellRenderer: () =>
-        '<button type="button" class="text-xs text-red-500 hover:text-red-700">Delete</button>'
-    }
-  ]);
+  readonly columnDefs = computed<ColDef<Command>[]>(() => {
+    const isMtl = this.moduleType() === 'MTL';
+    return [
+      { field: 'name', headerName: 'Name', editable: true, flex: 2 },
+      {
+        field: this.positionField(),
+        headerName: isMtl ? 'Relative time (hh:mm:ss.SSS)' : 'Relative orbit angle (°)',
+        editable: true,
+        flex: 1,
+        ...(isMtl
+          ? {
+              cellEditor: 'agTextCellEditor',
+              cellEditorParams: { useFormatter: true },
+              valueFormatter: (params: ValueFormatterParams<Command>) =>
+                formatRelativeTime(params.value as string | null),
+              valueParser: (params: ValueParserParams<Command>) => parseRelativeTime(params.newValue)
+            }
+          : {
+              cellEditor: 'agNumberCellEditor',
+              valueParser: (params: ValueParserParams<Command>) => Number(params.newValue)
+            })
+      },
+      {
+        colId: ACTIONS_COLUMN_ID,
+        headerName: '',
+        width: 90,
+        editable: false,
+        sortable: false,
+        filter: false,
+        resizable: false,
+        cellRenderer: () =>
+          '<button type="button" class="text-xs text-red-500 hover:text-red-700">Delete</button>'
+      }
+    ];
+  });
 
   constructor() {
     effect(() => {
@@ -98,11 +113,12 @@ export class CommandTable {
   addCommand(): void {
     this.creating.set(true);
     this.error.set(null);
+    const isMtl = this.moduleType() === 'MTL';
     this.commandService
       .create({
         module_id: this.moduleId(),
         name: 'New command',
-        [this.positionField()]: 0
+        [this.positionField()]: isMtl ? 'PT0S' : 0
       })
       .subscribe({
         next: (created) => {
@@ -120,6 +136,16 @@ export class CommandTable {
     const command = event.data;
     const field = event.colDef.field as EditableField | undefined;
     if (!field || event.oldValue === event.newValue) {
+      return;
+    }
+    if (
+      (typeof event.newValue === 'number' && Number.isNaN(event.newValue)) ||
+      event.newValue === INVALID_RELATIVE_TIME
+    ) {
+      this.error.set('Invalid time format. Use hh:mm:ss.SSS.');
+      this.rowData.update((rows) =>
+        rows.map((row) => (row.id === command.id ? { ...row, [field]: event.oldValue } : row))
+      );
       return;
     }
     const changes = { [field]: event.newValue } as CommandUpdate;

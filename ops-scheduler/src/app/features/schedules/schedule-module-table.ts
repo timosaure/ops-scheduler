@@ -6,6 +6,8 @@ import {
   ColDef,
   GetRowIdParams,
   ModuleRegistry,
+  ValueFormatterParams,
+  ValueParserParams,
   ValueSetterParams,
   themeQuartz
 } from 'ag-grid-community';
@@ -20,6 +22,7 @@ import {
 import { ModuleService } from '../../core/services/module.service';
 import { ScheduleModuleService } from '../../core/services/schedule-module.service';
 import { extractErrorMessage } from '../../core/util/http-error';
+import { formatRelativeTime, INVALID_RELATIVE_TIME, parseRelativeTime } from '../../core/util/orbit-time';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -84,11 +87,14 @@ export class ScheduleModuleTable {
     { headerName: 'Type', valueGetter: (params) => params.data?.module.type ?? '', flex: 1 },
     { headerName: 'Subschedule', valueGetter: (params) => params.data?.module.subschedule ?? '', flex: 1 },
     {
-      field: 'relative_time_seconds',
-      headerName: 'Relative time (s)',
+      field: 'relative_time',
+      headerName: 'Relative time (hh:mm:ss.SSS)',
       editable: (params) => params.data?.module.type === 'MTL',
-      cellEditor: 'agNumberCellEditor',
-      valueParser: (params) => Number(params.newValue),
+      cellEditor: 'agTextCellEditor',
+      cellEditorParams: { useFormatter: true },
+      valueFormatter: (params: ValueFormatterParams<ScheduleModuleWithModule>) =>
+        formatRelativeTime(params.value as string | null),
+      valueParser: (params: ValueParserParams<ScheduleModuleWithModule>) => parseRelativeTime(params.newValue),
       flex: 1
     },
     {
@@ -160,7 +166,7 @@ export class ScheduleModuleTable {
       schedule_id: this.scheduleId(),
       module_id: module.id,
       ...(module.type === 'MTL'
-        ? { relative_time_seconds: 0 }
+        ? { relative_time: 'PT0S' }
         : { delta_orbit_number: 0, delta_orbit_angle: 0 })
     };
     this.adding.set(true);
@@ -207,14 +213,14 @@ export class ScheduleModuleTable {
   private applyModuleChange(current: ScheduleModuleWithModule, newModule: ModuleWithGroup): void {
     const changes: ScheduleModuleUpdate =
       newModule.type === 'MTL'
-        ? { module_id: newModule.id, relative_time_seconds: 0, delta_orbit_number: null, delta_orbit_angle: null }
-        : { module_id: newModule.id, delta_orbit_number: 0, delta_orbit_angle: 0, relative_time_seconds: null };
+        ? { module_id: newModule.id, relative_time: 'PT0S', delta_orbit_number: null, delta_orbit_angle: null }
+        : { module_id: newModule.id, delta_orbit_number: 0, delta_orbit_angle: 0, relative_time: null };
 
     const updatedRow: ScheduleModuleWithModule = {
       ...current,
       module: newModule,
       module_id: newModule.id,
-      relative_time_seconds: changes.relative_time_seconds ?? null,
+      relative_time: changes.relative_time ?? null,
       delta_orbit_number: changes.delta_orbit_number ?? null,
       delta_orbit_angle: changes.delta_orbit_angle ?? null
     };
@@ -233,6 +239,16 @@ export class ScheduleModuleTable {
     const scheduleModule = event.data;
     const field = event.colDef.field as EditableField | undefined;
     if (!field || event.oldValue === event.newValue) {
+      return;
+    }
+    if (
+      (typeof event.newValue === 'number' && Number.isNaN(event.newValue)) ||
+      event.newValue === INVALID_RELATIVE_TIME
+    ) {
+      this.error.set('Invalid time format. Use hh:mm:ss.SSS.');
+      this.rowData.update((rows) =>
+        rows.map((row) => (row.id === scheduleModule.id ? { ...row, [field]: event.oldValue } : row))
+      );
       return;
     }
     const changes = { [field]: event.newValue } as ScheduleModuleUpdate;
