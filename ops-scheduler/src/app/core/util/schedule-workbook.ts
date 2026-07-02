@@ -84,15 +84,25 @@ function buildCommandsSheet(
   const sheet = workbook.addWorksheet('Commands');
   sheet.columns = [
     { header: 'Absolute time', key: 'absoluteTime', width: 20 },
-    { header: 'Relative time', key: 'relativeTimeFormatted', width: 14 },
-    { header: 'Relative time (s)', key: 'relativeTime', width: 16 },
+    {
+      header: 'Relative time',
+      key: 'relativeTimeFormatted',
+      width: 14,
+      style: { alignment: { horizontal: 'right' } },
+    },
+    {
+      header: 'Relative time (s)',
+      key: 'relativeTime',
+      width: 16,
+      style: { alignment: { horizontal: 'right' } },
+    },
     { header: 'Orbit number', key: 'orbitNumber', width: 10 },
     { header: 'Orbit angle (°)', key: 'orbitAngle', width: 14 },
     { header: 'Module group', key: 'group', width: 20 },
     { header: 'Module', key: 'module', width: 20 },
     { header: 'Subschedule', key: 'subschedule', width: 12 },
     { header: 'Upload', key: 'upload', width: 12 },
-    { header: 'Command', key: 'command', width: 28 },
+    { header: 'Command', key: 'command', width: 256 },
   ];
   const headerRow = sheet.getRow(1);
   headerRow.font = { bold: true };
@@ -166,8 +176,18 @@ function buildTimelineSheet(
   const sheet = workbook.addWorksheet('Timeline');
   sheet.columns = [
     { header: 'Absolute time', key: 'absoluteTime', width: 20 },
-    { header: 'Relative time', key: 'relativeTimeFormatted', width: 14 },
-    { header: 'Relative time (s)', key: 'relativeTime', width: 16 },
+    {
+      header: 'Relative time',
+      key: 'relativeTimeFormatted',
+      width: 14,
+      style: { alignment: { horizontal: 'right' } },
+    },
+    {
+      header: 'Relative time (s)',
+      key: 'relativeTime',
+      width: 16,
+      style: { alignment: { horizontal: 'right' } },
+    },
     { header: 'Orbit number', key: 'orbitNumber', width: 10 },
     { header: 'Orbit angle (°)', key: 'orbitAngle', width: 14 },
     ...groupNames.flatMap((name) => {
@@ -176,7 +196,12 @@ function buildTimelineSheet(
       const timeHeader = subschedule !== undefined ? `SSchId=${subschedule}` : '';
       return [
         { header: name, key: columns.nameKey, width: 18 },
-        { header: timeHeader, key: columns.timeKey, width: 26 },
+        {
+          header: timeHeader,
+          key: columns.timeKey,
+          width: 26,
+          style: { alignment: { horizontal: 'right' as const } },
+        },
       ];
     }),
   ];
