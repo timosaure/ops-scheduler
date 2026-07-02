@@ -7,12 +7,14 @@ import { buildModuleColorMap } from './module-colors';
 import {
   absoluteTimeAtElapsedSeconds,
   commandElapsedSeconds,
+  formatDurationSeconds,
   orbitPositionAtElapsedSeconds,
-  scheduleModuleElapsedSeconds
+  scheduleModuleElapsedSeconds,
 } from './orbit-time';
 
 const DATE_FORMAT = 'yyyy-mm-dd hh:mm:ss';
 const NO_GROUP_LABEL = '(no group)';
+const HEADER_FILL_COLOR = 'FFD9D9D9';
 
 interface CommandEvent {
   scheduleModule: ScheduleModuleWithModule;
@@ -38,7 +40,7 @@ function round(value: number, decimals: number): number {
 export function buildScheduleWorkbook(
   schedule: Schedule,
   scheduleModules: ScheduleModuleWithModule[],
-  commandsByModuleId: Map<number, Command[]>
+  commandsByModuleId: Map<number, Command[]>,
 ): Workbook {
   const workbook = new Workbook();
   workbook.created = new Date();
@@ -53,7 +55,12 @@ export function buildScheduleWorkbook(
     const startSeconds = scheduleModuleElapsedSeconds(schedule, scheduleModule);
     let endSeconds = startSeconds;
     for (const command of commands) {
-      const elapsedSeconds = commandElapsedSeconds(schedule, scheduleModule, scheduleModule.module, command);
+      const elapsedSeconds = commandElapsedSeconds(
+        schedule,
+        scheduleModule,
+        scheduleModule.module,
+        command,
+      );
       events.push({ scheduleModule, command, elapsedSeconds });
       endSeconds = Math.max(endSeconds, elapsedSeconds);
     }
@@ -72,34 +79,41 @@ function buildCommandsSheet(
   workbook: Workbook,
   schedule: Schedule,
   events: CommandEvent[],
-  colorByModuleId: Map<number, string>
+  colorByModuleId: Map<number, string>,
 ): void {
   const sheet = workbook.addWorksheet('Commands');
   sheet.columns = [
-    { header: 'Orbit #', key: 'orbitNumber', width: 10 },
-    { header: 'Orbit angle (°)', key: 'orbitAngle', width: 14 },
-    { header: 'Relative time (s)', key: 'relativeTime', width: 16 },
     { header: 'Absolute time', key: 'absoluteTime', width: 20 },
+    { header: 'Relative time', key: 'relativeTimeFormatted', width: 14 },
+    { header: 'Relative time (s)', key: 'relativeTime', width: 16 },
+    { header: 'Orbit number', key: 'orbitNumber', width: 10 },
+    { header: 'Orbit angle (°)', key: 'orbitAngle', width: 14 },
     { header: 'Module group', key: 'group', width: 20 },
     { header: 'Module', key: 'module', width: 20 },
     { header: 'Subschedule', key: 'subschedule', width: 12 },
     { header: 'Upload', key: 'upload', width: 12 },
-    { header: 'Command', key: 'command', width: 28 }
+    { header: 'Command', key: 'command', width: 28 },
   ];
-  sheet.getRow(1).font = { bold: true };
+  const headerRow = sheet.getRow(1);
+  headerRow.font = { bold: true };
+  headerRow.fill = solidFill(HEADER_FILL_COLOR);
 
   for (const event of events) {
-    const { orbitNumber, orbitAngle } = orbitPositionAtElapsedSeconds(schedule, event.elapsedSeconds);
+    const { orbitNumber, orbitAngle } = orbitPositionAtElapsedSeconds(
+      schedule,
+      event.elapsedSeconds,
+    );
     const row = sheet.addRow({
+      absoluteTime: absoluteTimeAtElapsedSeconds(schedule, event.elapsedSeconds),
+      relativeTimeFormatted: formatDurationSeconds(event.elapsedSeconds),
+      relativeTime: round(event.elapsedSeconds, 3),
       orbitNumber,
       orbitAngle: round(orbitAngle, 3),
-      relativeTime: round(event.elapsedSeconds, 3),
-      absoluteTime: absoluteTimeAtElapsedSeconds(schedule, event.elapsedSeconds),
       group: event.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL,
       module: event.scheduleModule.module.name,
       subschedule: event.scheduleModule.module.subschedule,
       upload: event.scheduleModule.module.upload,
-      command: event.command.name
+      command: event.command.name,
     });
     row.getCell('absoluteTime').numFmt = DATE_FORMAT;
 
@@ -112,52 +126,100 @@ function buildCommandsSheet(
 
 const SECONDS_PER_MINUTE = 60;
 
+interface GroupColumnKeys {
+  nameKey: string;
+  timeKey: string;
+}
+
 function buildTimelineSheet(
   workbook: Workbook,
   schedule: Schedule,
   blocks: ModuleBlock[],
-  colorByModuleId: Map<number, string>
+  colorByModuleId: Map<number, string>,
 ): void {
   const groupNames = Array.from(
-    new Set(blocks.map((block) => block.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL))
+    new Set(
+      blocks.map((block) => block.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL),
+    ),
   ).sort();
-  const groupColumnKeys = new Map(groupNames.map((name, index) => [name, `group_${index}`]));
+  const groupColumns = new Map<string, GroupColumnKeys>(
+    groupNames.map((name, index) => [
+      name,
+      { nameKey: `group_${index}_name`, timeKey: `group_${index}_time` },
+    ]),
+  );
 
   const maxSeconds = blocks.reduce((max, block) => Math.max(max, block.endSeconds), 0);
   const totalMinutes = Math.ceil(maxSeconds / SECONDS_PER_MINUTE);
 
   const sheet = workbook.addWorksheet('Timeline');
+  const FIXED_COLUMN_COUNT = 5;
   sheet.columns = [
-    { header: 'Orbit #', key: 'orbitNumber', width: 10 },
-    { header: 'Orbit angle (°)', key: 'orbitAngle', width: 14 },
-    { header: 'Relative time (s)', key: 'relativeTime', width: 16 },
     { header: 'Absolute time', key: 'absoluteTime', width: 20 },
-    ...groupNames.map((name) => ({ header: name, key: groupColumnKeys.get(name), width: 18 }))
+    { header: 'Relative time', key: 'relativeTimeFormatted', width: 14 },
+    { header: 'Relative time (s)', key: 'relativeTime', width: 16 },
+    { header: 'Orbit number', key: 'orbitNumber', width: 10 },
+    { header: 'Orbit angle (°)', key: 'orbitAngle', width: 14 },
+    ...groupNames.flatMap((name) => {
+      const columns = groupColumns.get(name)!;
+      return [
+        { header: name, key: columns.nameKey, width: 18 },
+        { header: '', key: columns.timeKey, width: 16 },
+      ];
+    }),
   ];
-  sheet.getRow(1).font = { bold: true };
+
+  const headerRow = sheet.getRow(1);
+  headerRow.font = { bold: true };
+  headerRow.fill = solidFill(HEADER_FILL_COLOR);
+  groupNames.forEach((_, index) => {
+    const startColumn = FIXED_COLUMN_COUNT + index * 2 + 1;
+    sheet.mergeCells(1, startColumn, 1, startColumn + 1);
+  });
 
   for (let minute = 0; minute <= totalMinutes; minute++) {
     const minuteStart = minute * SECONDS_PER_MINUTE;
-    const minuteEnd = minuteStart + SECONDS_PER_MINUTE;
     const { orbitNumber, orbitAngle } = orbitPositionAtElapsedSeconds(schedule, minuteStart);
     const row = sheet.addRow({
+      absoluteTime: absoluteTimeAtElapsedSeconds(schedule, minuteStart),
+      relativeTimeFormatted: formatDurationSeconds(minuteStart),
+      relativeTime: minuteStart,
       orbitNumber,
       orbitAngle: round(orbitAngle, 3),
-      relativeTime: minuteStart,
-      absoluteTime: absoluteTimeAtElapsedSeconds(schedule, minuteStart)
     });
     row.getCell('absoluteTime').numFmt = DATE_FORMAT;
+  }
 
-    for (const block of blocks) {
-      if (block.startSeconds >= minuteEnd || block.endSeconds < minuteStart) {
-        continue;
-      }
-      const groupName = block.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL;
-      const key = groupColumnKeys.get(groupName);
-      const color = colorByModuleId.get(block.scheduleModule.module_id);
-      if (key && color) {
-        row.getCell(key).fill = solidFill(color);
-      }
+  for (const block of blocks) {
+    const groupName = block.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL;
+    const columns = groupColumns.get(groupName);
+    const color = colorByModuleId.get(block.scheduleModule.module_id);
+    if (!columns || !color) {
+      continue;
+    }
+
+    const startRow = Math.floor(block.startSeconds / SECONDS_PER_MINUTE) + 2;
+    const endRow = Math.floor(block.endSeconds / SECONDS_PER_MINUTE) + 2;
+    const fill = solidFill(color);
+
+    for (let rowNumber = startRow; rowNumber <= endRow; rowNumber++) {
+      const row = sheet.getRow(rowNumber);
+      row.getCell(columns.nameKey).fill = fill;
+      row.getCell(columns.timeKey).fill = fill;
+    }
+
+    const headerLine = sheet.getRow(startRow);
+    headerLine.getCell(columns.nameKey).value = block.scheduleModule.module.name;
+    const startTimeCell = headerLine.getCell(columns.timeKey);
+    startTimeCell.value = absoluteTimeAtElapsedSeconds(schedule, block.startSeconds);
+    startTimeCell.numFmt = DATE_FORMAT;
+
+    if (endRow > startRow) {
+      const secondLine = sheet.getRow(startRow + 1);
+      secondLine.getCell(columns.nameKey).value = block.scheduleModule.module.upload;
+      secondLine.getCell(columns.timeKey).value = formatDurationSeconds(
+        block.endSeconds - block.startSeconds,
+      );
     }
   }
 }

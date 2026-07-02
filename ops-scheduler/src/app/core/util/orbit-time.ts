@@ -96,6 +96,17 @@ export function formatRelativeTime(iso: string | null | undefined): string {
   return `${sign}${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${pad(millis, 3)}`;
 }
 
+/** Formats a plain number of seconds (e.g. a module's duration) as "hh:mm:ss". */
+export function formatDurationSeconds(totalSeconds: number): string {
+  const sign = totalSeconds < 0 ? '-' : '';
+  const duration = Duration.fromObject({ seconds: Math.round(Math.abs(totalSeconds)) }).shiftTo(
+    'hours',
+    'minutes',
+    'seconds'
+  );
+  return `${sign}${duration.toFormat('hh:mm:ss')}`;
+}
+
 /** Sentinel returned by parseRelativeTime when the input doesn't match the expected hh:mm:ss.SSS format. */
 export const INVALID_RELATIVE_TIME = 'invalid-relative-time';
 
