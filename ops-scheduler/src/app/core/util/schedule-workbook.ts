@@ -12,7 +12,8 @@ import {
   scheduleModuleElapsedSeconds,
 } from './orbit-time';
 
-const DATE_FORMAT = 'yyyy-mm-dd hh:mm:ss';
+const DATE_FORMAT = 'yyyy-mm-dd hh:mm:ss\\.000';
+const RELATIVE_SECONDS_FORMAT = '0\\.000';
 const NO_GROUP_LABEL = '(no group)';
 const HEADER_FILL_COLOR = 'FFD9D9D9';
 
@@ -95,18 +96,18 @@ function buildCommandsSheet(
 ): void {
   const sheet = workbook.addWorksheet('Commands');
   sheet.columns = [
-    { header: 'Absolute time', key: 'absoluteTime', width: 20 },
+    { header: 'Absolute time', key: 'absoluteTime', width: 24 },
     {
       header: 'Relative time',
       key: 'relativeTimeFormatted',
-      width: 14,
+      width: 17,
       style: { alignment: { horizontal: 'right' } },
     },
     {
       header: 'Relative time (s)',
       key: 'relativeTime',
       width: 16,
-      style: { alignment: { horizontal: 'right' } },
+      style: { alignment: { horizontal: 'right' }, numFmt: RELATIVE_SECONDS_FORMAT },
     },
     { header: 'Orbit number', key: 'orbitNumber', width: 10 },
     { header: 'Orbit angle (°)', key: 'orbitAngle', width: 14 },
@@ -187,18 +188,18 @@ function buildTimelineSheet(
 
   const sheet = workbook.addWorksheet('Timeline');
   sheet.columns = [
-    { header: 'Absolute time', key: 'absoluteTime', width: 20 },
+    { header: 'Absolute time', key: 'absoluteTime', width: 24 },
     {
       header: 'Relative time',
       key: 'relativeTimeFormatted',
-      width: 14,
+      width: 17,
       style: { alignment: { horizontal: 'right' } },
     },
     {
       header: 'Relative time (s)',
       key: 'relativeTime',
       width: 16,
-      style: { alignment: { horizontal: 'right' } },
+      style: { alignment: { horizontal: 'right' }, numFmt: RELATIVE_SECONDS_FORMAT },
     },
     { header: 'Orbit number', key: 'orbitNumber', width: 10 },
     { header: 'Orbit angle (°)', key: 'orbitAngle', width: 14 },
@@ -211,7 +212,7 @@ function buildTimelineSheet(
         {
           header: timeHeader,
           key: columns.timeKey,
-          width: 26,
+          width: 28,
           style: { alignment: { horizontal: 'right' as const } },
         },
       ];

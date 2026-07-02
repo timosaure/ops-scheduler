@@ -96,15 +96,19 @@ export function formatRelativeTime(iso: string | null | undefined): string {
   return `${sign}${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${pad(millis, 3)}`;
 }
 
-/** Formats a plain number of seconds (e.g. a module's duration) as "hh:mm:ss". */
+/** Formats a plain number of seconds (e.g. a module's duration) as "hh:mm:ss.SSS". */
 export function formatDurationSeconds(totalSeconds: number): string {
-  const sign = totalSeconds < 0 ? '-' : '';
-  const duration = Duration.fromObject({ seconds: Math.round(Math.abs(totalSeconds)) }).shiftTo(
-    'hours',
-    'minutes',
-    'seconds'
-  );
-  return `${sign}${duration.toFormat('hh:mm:ss')}`;
+  const totalMillis = Math.round(totalSeconds * 1000);
+  const sign = totalMillis < 0 ? '-' : '';
+  const absMillis = Math.abs(totalMillis);
+  const millis = absMillis % 1000;
+  const wholeSeconds = Math.floor(absMillis / 1000);
+  const seconds = wholeSeconds % 60;
+  const totalMinutes = Math.floor(wholeSeconds / 60);
+  const minutes = totalMinutes % 60;
+  const hours = Math.floor(totalMinutes / 60);
+  const pad = (value: number, length: number) => String(value).padStart(length, '0');
+  return `${sign}${pad(hours, 2)}:${pad(minutes, 2)}:${pad(seconds, 2)}.${pad(millis, 3)}`;
 }
 
 /** Sentinel returned by parseRelativeTime when the input doesn't match the expected hh:mm:ss.SSS format. */
