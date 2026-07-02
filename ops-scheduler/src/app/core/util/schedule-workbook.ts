@@ -111,7 +111,7 @@ function buildCommandsSheet(
       orbitAngle: round(orbitAngle, 3),
       group: event.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL,
       module: event.scheduleModule.module.name,
-      subschedule: event.scheduleModule.module.subschedule,
+      subschedule: event.scheduleModule.module.module_group?.subschedule,
       upload: event.scheduleModule.module.upload,
       command: event.command.name,
     });
@@ -153,7 +153,10 @@ function buildTimelineSheet(
   for (const block of blocks) {
     const groupName = block.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL;
     if (!subscheduleByGroup.has(groupName)) {
-      subscheduleByGroup.set(groupName, block.scheduleModule.module.subschedule);
+      const subschedule = block.scheduleModule.module.module_group?.subschedule;
+      if (subschedule !== undefined) {
+        subscheduleByGroup.set(groupName, subschedule);
+      }
     }
   }
 
@@ -169,9 +172,11 @@ function buildTimelineSheet(
     { header: 'Orbit angle (°)', key: 'orbitAngle', width: 14 },
     ...groupNames.flatMap((name) => {
       const columns = groupColumns.get(name)!;
+      const subschedule = subscheduleByGroup.get(name);
+      const timeHeader = subschedule !== undefined ? `SSchId=${subschedule}` : '';
       return [
         { header: name, key: columns.nameKey, width: 18 },
-        { header: `SSchId=${subscheduleByGroup.get(name)}`, key: columns.timeKey, width: 16 },
+        { header: timeHeader, key: columns.timeKey, width: 26 },
       ];
     }),
   ];

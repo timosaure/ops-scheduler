@@ -11,7 +11,6 @@ export interface Module {
   module_group_id: number;
   name: string;
   type: ModuleType;
-  subschedule: number;
   upload: ModuleUpload;
   created_at: string;
 }
@@ -20,17 +19,15 @@ export interface ModuleInsert {
   module_group_id: number;
   name: string;
   type: ModuleType;
-  subschedule: number;
   upload: ModuleUpload;
 }
 
 export interface ModuleUpdate {
   name?: string;
   type?: ModuleType;
-  subschedule?: number;
   upload?: ModuleUpload;
 }
 
 export interface ModuleWithGroup extends Module {
-  module_group: { name: string } | null;
+  module_group: { name: string; subschedule: number } | null;
 }

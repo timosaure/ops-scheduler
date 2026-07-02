@@ -22,8 +22,10 @@ export class ModuleGroupList {
 
   readonly editingId = signal<number | null>(null);
   readonly editingName = signal('');
+  readonly editingSubschedule = signal<number | null>(null);
 
   readonly newGroupName = signal('');
+  readonly newGroupSubschedule = signal<number | null>(null);
   readonly creating = signal(false);
 
   constructor() {
@@ -53,21 +55,27 @@ export class ModuleGroupList {
     event.stopPropagation();
     this.editingId.set(group.id);
     this.editingName.set(group.name);
+    this.editingSubschedule.set(group.subschedule);
   }
 
   cancelEdit(): void {
     this.editingId.set(null);
     this.editingName.set('');
+    this.editingSubschedule.set(null);
   }
 
   saveEdit(group: ModuleGroup): void {
     const name = this.editingName().trim();
-    if (!name || name === group.name) {
+    const subschedule = this.editingSubschedule();
+    if (!name || subschedule === null || Number.isNaN(subschedule)) {
+      return;
+    }
+    if (name === group.name && subschedule === group.subschedule) {
       this.cancelEdit();
       return;
     }
     this.error.set(null);
-    this.moduleGroupService.update(group.id, { name }).subscribe({
+    this.moduleGroupService.update(group.id, { name, subschedule }).subscribe({
       next: (updated) => {
         this.groups.update((list) =>
           list.map((g) => (g.id === updated.id ? updated : g)).sort((a, b) => a.name.localeCompare(b.name))
@@ -80,15 +88,17 @@ export class ModuleGroupList {
 
   createGroup(): void {
     const name = this.newGroupName().trim();
-    if (!name) {
+    const subschedule = this.newGroupSubschedule();
+    if (!name || subschedule === null || Number.isNaN(subschedule)) {
       return;
     }
     this.creating.set(true);
     this.error.set(null);
-    this.moduleGroupService.create({ name }).subscribe({
+    this.moduleGroupService.create({ name, subschedule }).subscribe({
       next: (created) => {
         this.groups.update((list) => [...list, created].sort((a, b) => a.name.localeCompare(b.name)));
         this.newGroupName.set('');
+        this.newGroupSubschedule.set(null);
         this.creating.set(false);
       },
       error: (err: unknown) => {

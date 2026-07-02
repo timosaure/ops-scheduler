@@ -88,7 +88,11 @@ export class ScheduleModuleTable {
       })
     },
     { headerName: 'Type', valueGetter: (params) => params.data?.module.type ?? '', flex: 1 },
-    { headerName: 'Subschedule', valueGetter: (params) => params.data?.module.subschedule ?? '', flex: 1 },
+    {
+      headerName: 'Subschedule',
+      valueGetter: (params) => params.data?.module.module_group?.subschedule ?? '',
+      flex: 1
+    },
     {
       field: 'relative_time',
       headerName: 'Relative time (hh:mm:ss.SSS)',

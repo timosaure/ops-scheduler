@@ -12,7 +12,7 @@ export interface ScheduleModule {
 }
 
 export interface ScheduleModuleWithModule extends ScheduleModule {
-  module: Module & { module_group: { name: string } | null };
+  module: Module & { module_group: { name: string; subschedule: number } | null };
 }
 
 export interface ScheduleModuleInsert {

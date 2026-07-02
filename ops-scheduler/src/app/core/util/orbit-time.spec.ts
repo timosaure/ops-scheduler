@@ -34,7 +34,6 @@ const opsModule: Module = {
   module_group_id: 1,
   name: 'Test OPS module',
   type: 'OPS',
-  subschedule: 1,
   upload: 'LIVE',
   created_at: '2026-01-01T00:00:00Z'
 };

@@ -26,6 +26,14 @@
                   (keydown.escape)="cancelEdit()"
                   autofocus
                 />
+                <input
+                  class="w-16 flex-none rounded border border-gray-300 px-2 py-1 text-sm"
+                  type="number"
+                  title="Subschedule ID"
+                  [(ngModel)]="editingSubschedule"
+                  (keydown.enter)="saveEdit(group)"
+                  (keydown.escape)="cancelEdit()"
+                />
                 <button
                   class="rounded px-2 py-1 text-sm text-blue-600 hover:bg-blue-50"
                   type="button"
@@ -49,7 +57,12 @@
                 [class.text-blue-700]="selectedId() === group.id"
                 (click)="select(group)"
               >
-                <span class="truncate">{{ group.name }}</span>
+                <span class="flex min-w-0 items-center gap-2">
+                  <span class="truncate">{{ group.name }}</span>
+                  <span class="flex-none rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                    SSchId={{ group.subschedule }}
+                  </span>
+                </span>
                 <span class="hidden flex-none items-center gap-1 group-hover:flex">
                   <span
                     class="rounded px-1.5 py-0.5 text-xs text-gray-500 hover:bg-gray-200"
@@ -81,10 +94,18 @@
         [(ngModel)]="newGroupName"
         (keydown.enter)="createGroup()"
       />
+      <input
+        class="w-16 flex-none rounded border border-gray-300 px-2 py-1 text-sm"
+        type="number"
+        title="Subschedule ID"
+        placeholder="SSchId"
+        [(ngModel)]="newGroupSubschedule"
+        (keydown.enter)="createGroup()"
+      />
       <button
         class="flex-none rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         type="button"
-        [disabled]="creating() || !newGroupName().trim()"
+        [disabled]="creating() || !newGroupName().trim() || newGroupSubschedule() === null"
         (click)="createGroup()"
       >
         Add

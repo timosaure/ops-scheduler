@@ -59,15 +59,6 @@ export class ModuleTable {
       cellEditorParams: { values: MODULE_TYPES }
     },
     {
-      field: 'subschedule',
-      headerName: 'Subschedule',
-      editable: true,
-      flex: 1,
-      cellEditor: 'agNumberCellEditor',
-      cellEditorParams: { precision: 0 },
-      valueParser: (params) => Number(params.newValue)
-    },
-    {
       field: 'upload',
       headerName: 'Upload',
       editable: true,
@@ -121,7 +112,6 @@ export class ModuleTable {
         module_group_id: this.groupId(),
         name: 'New module',
         type: 'MTL',
-        subschedule: 0,
         upload: 'NOT_LIVE'
       })
       .subscribe({

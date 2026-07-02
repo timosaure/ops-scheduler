@@ -20,7 +20,7 @@ export class ModuleService {
 
   listAll(): Observable<ModuleWithGroup[]> {
     return this.http.get<ModuleWithGroup[]>(this.baseUrl, {
-      params: { select: '*,module_group(name)', order: 'name.asc' }
+      params: { select: '*,module_group(name,subschedule)', order: 'name.asc' }
     });
   }
 

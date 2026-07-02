@@ -11,7 +11,7 @@ import {
 } from '../models/schedule-module.model';
 
 const REPRESENTATION_HEADERS = { Prefer: 'return=representation' };
-const WITH_MODULE_SELECT = '*,module(*,module_group(name))';
+const WITH_MODULE_SELECT = '*,module(*,module_group(name,subschedule))';
 
 @Injectable({ providedIn: 'root' })
 export class ScheduleModuleService {
