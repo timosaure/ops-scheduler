@@ -52,7 +52,19 @@ export function buildScheduleWorkbook(
 
   for (const scheduleModule of scheduleModules) {
     const commands = commandsByModuleId.get(scheduleModule.module_id) ?? [];
-    const startSeconds = scheduleModuleElapsedSeconds(schedule, scheduleModule);
+    let startSeconds = scheduleModuleElapsedSeconds(schedule, scheduleModule);
+
+    // The block should start with the first command not the module start as the first command in the module might come
+    // after a significant delay
+    if (commands.length > 0) {
+      startSeconds = commandElapsedSeconds(
+        schedule,
+        scheduleModule,
+        scheduleModule.module,
+        commands[0],
+      );
+    }
+
     let endSeconds = startSeconds;
     for (const command of commands) {
       const elapsedSeconds = commandElapsedSeconds(
