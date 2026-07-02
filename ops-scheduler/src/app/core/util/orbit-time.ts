@@ -22,8 +22,15 @@ export function scheduleModuleElapsedSeconds(
   if (scheduleModule.relative_time != null) {
     return isoDurationSeconds(scheduleModule.relative_time);
   }
+  const deltaOrbitNumber = scheduleModule.delta_orbit_number ?? 0;
+  const deltaOrbitAngle = scheduleModule.delta_orbit_angle ?? 0;
+  // Orbit 0 relative to the schedule is the partial orbit already under way when the scenario
+  // starts, so its angle builds onward from start_orbit_angle. Every other orbit is a full
+  // revolution measured from its own zero reference, independent of start_orbit_angle.
   const deltaOrbits =
-    (scheduleModule.delta_orbit_number ?? 0) + (scheduleModule.delta_orbit_angle ?? 0) / 360;
+    deltaOrbitNumber === 0
+      ? deltaOrbitAngle / 360
+      : deltaOrbitNumber + (deltaOrbitAngle - schedule.start_orbit_angle) / 360;
   return deltaOrbits * schedule.orbit_duration_seconds;
 }
 
