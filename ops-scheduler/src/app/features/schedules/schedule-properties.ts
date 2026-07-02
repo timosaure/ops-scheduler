@@ -3,14 +3,8 @@ import { FormsModule } from '@angular/forms';
 
 import { Schedule, ScheduleUpdate } from '../../core/models/schedule.model';
 import { ScheduleService } from '../../core/services/schedule.service';
+import { INVALID_DATE_TIME, formatDateTimeInput, parseDateTimeInput } from '../../core/util/datetime-input';
 import { extractErrorMessage } from '../../core/util/http-error';
-
-function toLocalDateTimeInput(isoTime: string): string {
-  const date = new Date(isoTime);
-  date.setSeconds(0, 0);
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-  return date.toISOString().slice(0, 16);
-}
 
 @Component({
   selector: 'app-schedule-properties',
@@ -35,7 +29,7 @@ export class ScheduleProperties {
     effect(() => {
       const schedule = this.schedule();
       this.name.set(schedule.name);
-      this.startTime.set(toLocalDateTimeInput(schedule.start_time));
+      this.startTime.set(formatDateTimeInput(schedule.start_time));
       this.startOrbitNumber.set(schedule.start_orbit_number);
       this.startOrbitAngle.set(schedule.start_orbit_angle);
       this.orbitDurationSeconds.set(schedule.orbit_duration_seconds);
@@ -53,12 +47,19 @@ export class ScheduleProperties {
           return;
         }
         break;
-      case 'start_time':
-        value = new Date(this.startTime()).toISOString();
-        if (value === schedule.start_time) {
+      case 'start_time': {
+        const parsed = parseDateTimeInput(this.startTime());
+        if (parsed === INVALID_DATE_TIME) {
+          this.error.set('Start time is not a valid ISO 8601 date-time.');
+          this.startTime.set(formatDateTimeInput(schedule.start_time));
           return;
         }
+        if (parsed === schedule.start_time) {
+          return;
+        }
+        value = parsed;
         break;
+      }
       case 'start_orbit_number':
         value = this.startOrbitNumber();
         if (value === schedule.start_orbit_number) {
@@ -85,7 +86,7 @@ export class ScheduleProperties {
         this.error.set(extractErrorMessage(err));
         const schedule = this.schedule();
         this.name.set(schedule.name);
-        this.startTime.set(toLocalDateTimeInput(schedule.start_time));
+        this.startTime.set(formatDateTimeInput(schedule.start_time));
         this.startOrbitNumber.set(schedule.start_orbit_number);
         this.startOrbitAngle.set(schedule.start_orbit_angle);
         this.orbitDurationSeconds.set(schedule.orbit_duration_seconds);

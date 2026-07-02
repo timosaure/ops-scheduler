@@ -3,14 +3,8 @@ import { FormsModule } from '@angular/forms';
 
 import { Schedule, ScheduleInsert } from '../../core/models/schedule.model';
 import { ScheduleService } from '../../core/services/schedule.service';
+import { INVALID_DATE_TIME, nowDateTimeInput, parseDateTimeInput } from '../../core/util/datetime-input';
 import { extractErrorMessage } from '../../core/util/http-error';
-
-function defaultStartTime(): string {
-  const now = new Date();
-  now.setSeconds(0, 0);
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  return now.toISOString().slice(0, 16);
-}
 
 @Component({
   selector: 'app-schedule-list',
@@ -31,7 +25,7 @@ export class ScheduleList {
   readonly showCreateForm = signal(false);
   readonly creating = signal(false);
   readonly newName = signal('');
-  readonly newStartTime = signal(defaultStartTime());
+  readonly newStartTime = signal(nowDateTimeInput());
   readonly newStartOrbitNumber = signal(1);
   readonly newStartOrbitAngle = signal(0);
   readonly newOrbitDurationSeconds = signal(5700);
@@ -73,7 +67,7 @@ export class ScheduleList {
   cancelCreate(): void {
     this.showCreateForm.set(false);
     this.newName.set('');
-    this.newStartTime.set(defaultStartTime());
+    this.newStartTime.set(nowDateTimeInput());
     this.newStartOrbitNumber.set(1);
     this.newStartOrbitAngle.set(0);
     this.newOrbitDurationSeconds.set(5700);
@@ -84,9 +78,14 @@ export class ScheduleList {
     if (!name || !this.newStartTime()) {
       return;
     }
+    const startTime = parseDateTimeInput(this.newStartTime());
+    if (startTime === INVALID_DATE_TIME) {
+      this.error.set('Start time is not a valid ISO 8601 date-time.');
+      return;
+    }
     const insert: ScheduleInsert = {
       name,
-      start_time: new Date(this.newStartTime()).toISOString(),
+      start_time: startTime,
       start_orbit_number: this.newStartOrbitNumber(),
       start_orbit_angle: this.newStartOrbitAngle(),
       orbit_duration_seconds: this.newOrbitDurationSeconds()
