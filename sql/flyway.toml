@@ -1,0 +1,17 @@
+databaseType = "PostgreSQL"
+id = "aff5a6df-d43f-4637-8ac8-eebdaada84ec"
+name = "ops-scheduler"
+
+[flyway]
+callbackLocations = [ "filesystem:callbacks" ]
+locations = [ "filesystem:migrations" ]
+mixed = true
+outOfOrder = true
+schemaModelLocation = "schema-model"
+validateMigrationNaming = true
+environment = "development"
+
+[environments.development]
+url = "jdbc:postgresql://localhost:5432/app_db"
+user = "app_user"
+password = "password"

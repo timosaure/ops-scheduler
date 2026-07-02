@@ -1,0 +1,94 @@
+<div class="flex h-full flex-col">
+  <div class="flex-none border-b border-gray-200 px-3 py-2">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Module groups</h2>
+  </div>
+
+  @if (error(); as message) {
+    <p class="flex-none border-b border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ message }}</p>
+  }
+
+  <div class="min-h-0 flex-1 overflow-y-auto">
+    @if (loading()) {
+      <p class="px-3 py-2 text-sm text-gray-500">Loading…</p>
+    } @else if (groups().length === 0) {
+      <p class="px-3 py-2 text-sm text-gray-500">No module groups yet.</p>
+    } @else {
+      <ul>
+        @for (group of groups(); track group.id) {
+          <li>
+            @if (editingId() === group.id) {
+              <div class="flex items-center gap-1 px-3 py-2">
+                <input
+                  class="min-w-0 flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+                  type="text"
+                  [(ngModel)]="editingName"
+                  (keydown.enter)="saveEdit(group)"
+                  (keydown.escape)="cancelEdit()"
+                  autofocus
+                />
+                <button
+                  class="rounded px-2 py-1 text-sm text-blue-600 hover:bg-blue-50"
+                  type="button"
+                  (click)="saveEdit(group)"
+                >
+                  Save
+                </button>
+                <button
+                  class="rounded px-2 py-1 text-sm text-gray-500 hover:bg-gray-100"
+                  type="button"
+                  (click)="cancelEdit()"
+                >
+                  Cancel
+                </button>
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="group flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                [class.bg-blue-50]="selectedId() === group.id"
+                [class.text-blue-700]="selectedId() === group.id"
+                (click)="select(group)"
+              >
+                <span class="truncate">{{ group.name }}</span>
+                <span class="hidden flex-none items-center gap-1 group-hover:flex">
+                  <span
+                    class="rounded px-1.5 py-0.5 text-xs text-gray-500 hover:bg-gray-200"
+                    (click)="startEdit(group, $event)"
+                  >
+                    Rename
+                  </span>
+                  <span
+                    class="rounded px-1.5 py-0.5 text-xs text-red-500 hover:bg-red-100"
+                    (click)="deleteGroup(group, $event)"
+                  >
+                    Delete
+                  </span>
+                </span>
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="flex-none border-t border-gray-200 p-3">
+    <div class="flex items-center gap-1">
+      <input
+        class="min-w-0 flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+        type="text"
+        placeholder="New group name"
+        [(ngModel)]="newGroupName"
+        (keydown.enter)="createGroup()"
+      />
+      <button
+        class="flex-none rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        type="button"
+        [disabled]="creating() || !newGroupName().trim()"
+        (click)="createGroup()"
+      >
+        Add
+      </button>
+    </div>
+  </div>
+</div>

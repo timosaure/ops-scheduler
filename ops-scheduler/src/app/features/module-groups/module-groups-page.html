@@ -1,0 +1,16 @@
+<div class="flex h-full">
+  <aside class="w-72 flex-none border-r border-gray-200">
+    <app-module-group-list
+      [selectedId]="selectedGroupId()"
+      (selectedIdChange)="selectedGroupId.set($event)"
+    />
+  </aside>
+
+  <main class="min-w-0 flex-1 p-4">
+    @if (selectedGroupId(); as groupId) {
+      <app-module-table [groupId]="groupId" />
+    } @else {
+      <p class="text-sm text-gray-500">Select a module group to edit its modules.</p>
+    }
+  </main>
+</div>
