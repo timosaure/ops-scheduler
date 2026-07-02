@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Command, CommandInsert, CommandUpdate } from '../models/command.model';
@@ -15,6 +15,15 @@ export class CommandService {
   listByModule(moduleId: number): Observable<Command[]> {
     return this.http.get<Command[]>(this.baseUrl, {
       params: { module_id: `eq.${moduleId}`, order: 'id.asc' }
+    });
+  }
+
+  listByModules(moduleIds: number[]): Observable<Command[]> {
+    if (moduleIds.length === 0) {
+      return of([]);
+    }
+    return this.http.get<Command[]>(this.baseUrl, {
+      params: { module_id: `in.(${moduleIds.join(',')})`, order: 'module_id.asc,id.asc' }
     });
   }
 
