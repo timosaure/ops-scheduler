@@ -149,11 +149,18 @@ function buildTimelineSheet(
     ]),
   );
 
+  const subscheduleByGroup = new Map<string, number>();
+  for (const block of blocks) {
+    const groupName = block.scheduleModule.module.module_group?.name ?? NO_GROUP_LABEL;
+    if (!subscheduleByGroup.has(groupName)) {
+      subscheduleByGroup.set(groupName, block.scheduleModule.module.subschedule);
+    }
+  }
+
   const maxSeconds = blocks.reduce((max, block) => Math.max(max, block.endSeconds), 0);
   const totalMinutes = Math.ceil(maxSeconds / SECONDS_PER_MINUTE);
 
   const sheet = workbook.addWorksheet('Timeline');
-  const FIXED_COLUMN_COUNT = 5;
   sheet.columns = [
     { header: 'Absolute time', key: 'absoluteTime', width: 20 },
     { header: 'Relative time', key: 'relativeTimeFormatted', width: 14 },
@@ -164,7 +171,7 @@ function buildTimelineSheet(
       const columns = groupColumns.get(name)!;
       return [
         { header: name, key: columns.nameKey, width: 18 },
-        { header: '', key: columns.timeKey, width: 16 },
+        { header: `SSchId=${subscheduleByGroup.get(name)}`, key: columns.timeKey, width: 16 },
       ];
     }),
   ];
@@ -172,10 +179,6 @@ function buildTimelineSheet(
   const headerRow = sheet.getRow(1);
   headerRow.font = { bold: true };
   headerRow.fill = solidFill(HEADER_FILL_COLOR);
-  groupNames.forEach((_, index) => {
-    const startColumn = FIXED_COLUMN_COUNT + index * 2 + 1;
-    sheet.mergeCells(1, startColumn, 1, startColumn + 1);
-  });
 
   for (let minute = 0; minute <= totalMinutes; minute++) {
     const minuteStart = minute * SECONDS_PER_MINUTE;
