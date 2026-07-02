@@ -15,5 +15,10 @@ export const routes: Routes = [
     path: 'modules/:moduleId/commands',
     loadComponent: () =>
       import('./features/commands/commands-page').then((m) => m.CommandsPage)
+  },
+  {
+    path: 'schedules',
+    loadComponent: () =>
+      import('./features/schedules/schedules-page').then((m) => m.SchedulesPage)
   }
 ];

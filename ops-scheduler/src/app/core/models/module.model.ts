@@ -23,3 +23,7 @@ export interface ModuleUpdate {
   type?: ModuleType;
   subschedule?: number;
 }
+
+export interface ModuleWithGroup extends Module {
+  module_group: { name: string } | null;
+}

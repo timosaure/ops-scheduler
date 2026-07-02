@@ -1,0 +1,19 @@
+<div class="flex h-full">
+  <aside class="w-72 flex-none border-r border-gray-200">
+    <app-schedule-list
+      [selectedId]="selectedSchedule()?.id ?? null"
+      (selectedScheduleChange)="onSelectedScheduleChange($event)"
+    />
+  </aside>
+
+  <main class="flex min-w-0 flex-1 flex-col gap-4 p-4">
+    @if (selectedSchedule(); as schedule) {
+      <app-schedule-properties [schedule]="schedule" (updated)="onScheduleUpdated($event)" />
+      <div class="min-h-0 flex-1">
+        <app-schedule-module-table [scheduleId]="schedule.id" />
+      </div>
+    } @else {
+      <p class="text-sm text-gray-500">Select a schedule to edit it, or create a new one.</p>
+    }
+  </main>
+</div>

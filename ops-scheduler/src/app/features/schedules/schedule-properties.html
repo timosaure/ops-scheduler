@@ -1,0 +1,55 @@
+<div class="flex flex-col gap-2">
+  @if (error(); as message) {
+    <p class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ message }}</p>
+  }
+
+  <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <label class="flex flex-col gap-0.5 text-xs text-gray-500">
+      Name
+      <input
+        class="rounded border border-gray-300 px-2 py-1 text-sm text-gray-900"
+        type="text"
+        [(ngModel)]="name"
+        (blur)="save('name')"
+        (keydown.enter)="save('name')"
+      />
+    </label>
+    <label class="flex flex-col gap-0.5 text-xs text-gray-500">
+      Start time
+      <input
+        class="rounded border border-gray-300 px-2 py-1 text-sm text-gray-900"
+        type="datetime-local"
+        [(ngModel)]="startTime"
+        (blur)="save('start_time')"
+      />
+    </label>
+    <label class="flex flex-col gap-0.5 text-xs text-gray-500">
+      Start orbit number
+      <input
+        class="rounded border border-gray-300 px-2 py-1 text-sm text-gray-900"
+        type="number"
+        step="1"
+        [(ngModel)]="startOrbitNumber"
+        (blur)="save('start_orbit_number')"
+      />
+    </label>
+    <label class="flex flex-col gap-0.5 text-xs text-gray-500">
+      Start orbit angle (°)
+      <input
+        class="rounded border border-gray-300 px-2 py-1 text-sm text-gray-900"
+        type="number"
+        [(ngModel)]="startOrbitAngle"
+        (blur)="save('start_orbit_angle')"
+      />
+    </label>
+    <label class="flex flex-col gap-0.5 text-xs text-gray-500">
+      Orbit duration (s)
+      <input
+        class="rounded border border-gray-300 px-2 py-1 text-sm text-gray-900"
+        type="number"
+        [(ngModel)]="orbitDurationSeconds"
+        (blur)="save('orbit_duration_seconds')"
+      />
+    </label>
+  </div>
+</div>

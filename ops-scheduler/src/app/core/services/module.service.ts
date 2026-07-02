@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { Module, ModuleInsert, ModuleUpdate } from '../models/module.model';
+import { Module, ModuleInsert, ModuleUpdate, ModuleWithGroup } from '../models/module.model';
 
 const REPRESENTATION_HEADERS = { Prefer: 'return=representation' };
 
@@ -15,6 +15,12 @@ export class ModuleService {
   listByGroup(moduleGroupId: number): Observable<Module[]> {
     return this.http.get<Module[]>(this.baseUrl, {
       params: { module_group_id: `eq.${moduleGroupId}`, order: 'id.asc' }
+    });
+  }
+
+  listAll(): Observable<ModuleWithGroup[]> {
+    return this.http.get<ModuleWithGroup[]>(this.baseUrl, {
+      params: { select: '*,module_group(name)', order: 'name.asc' }
     });
   }
 

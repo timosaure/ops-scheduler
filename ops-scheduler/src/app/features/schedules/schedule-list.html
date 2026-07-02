@@ -1,0 +1,113 @@
+<div class="flex h-full flex-col">
+  <div class="flex-none border-b border-gray-200 px-3 py-2">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Schedules</h2>
+  </div>
+
+  @if (error(); as message) {
+    <p class="flex-none border-b border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ message }}</p>
+  }
+
+  <div class="min-h-0 flex-1 overflow-y-auto">
+    @if (loading()) {
+      <p class="px-3 py-2 text-sm text-gray-500">Loading…</p>
+    } @else if (schedules().length === 0) {
+      <p class="px-3 py-2 text-sm text-gray-500">No schedules yet.</p>
+    } @else {
+      <ul>
+        @for (schedule of schedules(); track schedule.id) {
+          <li>
+            <button
+              type="button"
+              class="group flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+              [class.bg-blue-50]="selectedId() === schedule.id"
+              [class.text-blue-700]="selectedId() === schedule.id"
+              (click)="select(schedule)"
+            >
+              <span class="truncate">{{ schedule.name }}</span>
+              <span class="hidden flex-none items-center gap-1 group-hover:flex">
+                <span
+                  class="rounded px-1.5 py-0.5 text-xs text-red-500 hover:bg-red-100"
+                  (click)="deleteSchedule(schedule, $event)"
+                >
+                  Delete
+                </span>
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="flex-none border-t border-gray-200 p-3">
+    @if (!showCreateForm()) {
+      <button
+        class="w-full rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+        type="button"
+        (click)="openCreateForm()"
+      >
+        New schedule
+      </button>
+    } @else {
+      <div class="flex flex-col gap-2">
+        <input
+          class="min-w-0 rounded border border-gray-300 px-2 py-1 text-sm"
+          type="text"
+          placeholder="Schedule name"
+          [(ngModel)]="newName"
+          autofocus
+        />
+        <label class="flex flex-col gap-0.5 text-xs text-gray-500">
+          Start time
+          <input
+            class="rounded border border-gray-300 px-2 py-1 text-sm text-gray-900"
+            type="datetime-local"
+            [(ngModel)]="newStartTime"
+          />
+        </label>
+        <label class="flex flex-col gap-0.5 text-xs text-gray-500">
+          Start orbit number
+          <input
+            class="rounded border border-gray-300 px-2 py-1 text-sm text-gray-900"
+            type="number"
+            step="1"
+            [(ngModel)]="newStartOrbitNumber"
+          />
+        </label>
+        <label class="flex flex-col gap-0.5 text-xs text-gray-500">
+          Start orbit angle (°)
+          <input
+            class="rounded border border-gray-300 px-2 py-1 text-sm text-gray-900"
+            type="number"
+            [(ngModel)]="newStartOrbitAngle"
+          />
+        </label>
+        <label class="flex flex-col gap-0.5 text-xs text-gray-500">
+          Orbit duration (s)
+          <input
+            class="rounded border border-gray-300 px-2 py-1 text-sm text-gray-900"
+            type="number"
+            [(ngModel)]="newOrbitDurationSeconds"
+          />
+        </label>
+        <div class="flex items-center gap-1">
+          <button
+            class="flex-1 rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            type="button"
+            [disabled]="creating() || !newName().trim()"
+            (click)="createSchedule()"
+          >
+            Create
+          </button>
+          <button
+            class="rounded px-3 py-1 text-sm text-gray-500 hover:bg-gray-100"
+            type="button"
+            (click)="cancelCreate()"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

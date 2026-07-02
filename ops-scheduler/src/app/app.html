@@ -1,6 +1,22 @@
 <div class="flex h-screen flex-col">
-  <header class="flex-none border-b border-gray-200 bg-white px-4 py-3">
+  <header class="flex flex-none items-center gap-6 border-b border-gray-200 bg-white px-4 py-3">
     <h1 class="text-lg font-semibold text-gray-900">Ops Scheduler</h1>
+    <nav class="flex items-center gap-4 text-sm">
+      <a
+        routerLink="/module-groups"
+        routerLinkActive="text-blue-700 font-medium"
+        class="text-gray-500 hover:text-gray-900"
+      >
+        Module groups
+      </a>
+      <a
+        routerLink="/schedules"
+        routerLinkActive="text-blue-700 font-medium"
+        class="text-gray-500 hover:text-gray-900"
+      >
+        Schedules
+      </a>
+    </nav>
   </header>
   <div class="min-h-0 flex-1">
     <router-outlet />
