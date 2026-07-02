@@ -26,8 +26,10 @@
       [loading]="loading()"
       [singleClickEdit]="true"
       [cellSelection]="cellSelection"
+      [rowDragManaged]="rowDragManaged"
       (cellValueChanged)="onCellValueChanged($event)"
       (cellClicked)="onCellClicked($event)"
+      (rowDragEnd)="onRowDragEnd($event)"
     />
   </div>
 </div>

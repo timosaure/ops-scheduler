@@ -6,6 +6,7 @@ import {
   ColDef,
   GetRowIdParams,
   ModuleRegistry,
+  RowDragEndEvent,
   ValueFormatterParams,
   ValueParserParams,
   ValueSetterParams,
@@ -13,6 +14,7 @@ import {
 } from 'ag-grid-community';
 import { CellSelectionModule, ClipboardModule } from 'ag-grid-enterprise';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { forkJoin } from 'rxjs';
 
 import { MODULE_UPLOADS, ModuleWithGroup } from '../../core/models/module.model';
 import {
@@ -58,13 +60,24 @@ export class ScheduleModuleTable {
 
   readonly defaultColDef: ColDef<ScheduleModuleWithModule> = {
     resizable: true,
-    sortable: true,
+    sortable: false,
     filter: true
   };
 
   readonly cellSelection = true;
+  readonly rowDragManaged = true;
 
   readonly columnDefs: ColDef<ScheduleModuleWithModule>[] = [
+    {
+      colId: 'drag',
+      headerName: '',
+      width: 40,
+      rowDrag: true,
+      editable: false,
+      filter: false,
+      resizable: false,
+      valueGetter: () => ''
+    },
     {
       colId: 'group',
       headerName: 'Group',
@@ -177,10 +190,12 @@ export class ScheduleModuleTable {
       this.error.set('No modules available. Create a module first.');
       return;
     }
+    const position = this.rowData().length;
     const insert: ScheduleModuleInsert = {
       schedule_id: this.scheduleId(),
       module_id: module.id,
       upload: 'NOT_LIVE',
+      position,
       ...(module.type === 'MTL'
         ? { relative_time: 'PT0S' }
         : { delta_orbit_number: 0, delta_orbit_angle: 0 })
@@ -301,6 +316,41 @@ export class ScheduleModuleTable {
         this.rowData.update((rows) => rows.filter((row) => row.id !== scheduleModule.id));
       },
       error: (err: unknown) => this.error.set(extractErrorMessage(err))
+    });
+  }
+
+  onRowDragEnd(event: RowDragEndEvent<ScheduleModuleWithModule>): void {
+    const orderedRows: ScheduleModuleWithModule[] = [];
+    event.api.forEachNodeAfterFilterAndSort((node) => {
+      if (node.data) {
+        orderedRows.push(node.data);
+      }
+    });
+
+    const changedIds: number[] = [];
+    const renumberedRows = orderedRows.map((row, index) => {
+      if (row.position !== index) {
+        changedIds.push(row.id);
+      }
+      return row.position === index ? row : { ...row, position: index };
+    });
+
+    if (changedIds.length === 0) {
+      return;
+    }
+
+    this.rowData.set(renumberedRows);
+    this.error.set(null);
+
+    forkJoin(
+      changedIds.map((id) =>
+        this.scheduleModuleService.update(id, { position: renumberedRows.find((row) => row.id === id)!.position })
+      )
+    ).subscribe({
+      error: (err: unknown) => {
+        this.error.set(extractErrorMessage(err));
+        this.load(this.scheduleId());
+      }
     });
   }
 }

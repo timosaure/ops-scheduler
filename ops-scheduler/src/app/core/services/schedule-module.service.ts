@@ -20,7 +20,7 @@ export class ScheduleModuleService {
 
   listBySchedule(scheduleId: number): Observable<ScheduleModuleWithModule[]> {
     return this.http.get<ScheduleModuleWithModule[]>(this.baseUrl, {
-      params: { schedule_id: `eq.${scheduleId}`, select: WITH_MODULE_SELECT, order: 'id.asc' }
+      params: { schedule_id: `eq.${scheduleId}`, select: WITH_MODULE_SELECT, order: 'position.asc,id.asc' }
     });
   }
 

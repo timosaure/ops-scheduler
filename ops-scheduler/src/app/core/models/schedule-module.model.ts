@@ -9,6 +9,7 @@ export interface ScheduleModule {
   delta_orbit_number: number | null;
   delta_orbit_angle: number | null;
   upload: ModuleUpload;
+  position: number;
   created_at: string;
 }
 
@@ -23,6 +24,7 @@ export interface ScheduleModuleInsert {
   delta_orbit_number?: number | null;
   delta_orbit_angle?: number | null;
   upload: ModuleUpload;
+  position: number;
 }
 
 export interface ScheduleModuleUpdate {
@@ -31,4 +33,5 @@ export interface ScheduleModuleUpdate {
   delta_orbit_number?: number | null;
   delta_orbit_angle?: number | null;
   upload?: ModuleUpload;
+  position?: number;
 }

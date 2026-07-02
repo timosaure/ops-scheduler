@@ -1,0 +1,2 @@
+ALTER TABLE schedule_module
+    ADD COLUMN position INTEGER NOT NULL DEFAULT 0;
