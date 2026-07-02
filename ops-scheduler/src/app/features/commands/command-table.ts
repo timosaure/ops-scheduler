@@ -10,6 +10,7 @@ import {
   ValueParserParams,
   themeQuartz
 } from 'ag-grid-community';
+import { CellSelectionModule, ClipboardModule } from 'ag-grid-enterprise';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 
 import { ModuleType } from '../../core/models/module.model';
@@ -18,7 +19,7 @@ import { CommandService } from '../../core/services/command.service';
 import { extractErrorMessage } from '../../core/util/http-error';
 import { formatRelativeTime, INVALID_RELATIVE_TIME, parseRelativeTime } from '../../core/util/orbit-time';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllCommunityModule, ClipboardModule, CellSelectionModule]);
 
 const ACTIONS_COLUMN_ID = 'actions';
 type EditableField = keyof CommandUpdate;
@@ -47,6 +48,8 @@ export class CommandTable {
     sortable: true,
     filter: true
   };
+
+  readonly cellSelection = true;
 
   readonly positionField = computed<EditableField>(() =>
     this.moduleType() === 'MTL' ? 'relative_time' : 'relative_orbit_angle'

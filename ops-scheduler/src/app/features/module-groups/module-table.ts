@@ -8,6 +8,7 @@ import {
   ModuleRegistry,
   themeQuartz
 } from 'ag-grid-community';
+import { CellSelectionModule, ClipboardModule } from 'ag-grid-enterprise';
 import { Component, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -15,7 +16,7 @@ import { MODULE_TYPES, Module, ModuleUpdate } from '../../core/models/module.mod
 import { ModuleService } from '../../core/services/module.service';
 import { extractErrorMessage } from '../../core/util/http-error';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllCommunityModule, ClipboardModule, CellSelectionModule]);
 
 const ACTIONS_COLUMN_ID = 'actions';
 type EditableField = keyof ModuleUpdate;
@@ -44,6 +45,8 @@ export class ModuleTable {
     sortable: true,
     filter: true
   };
+
+  readonly cellSelection = true;
 
   readonly columnDefs: ColDef<Module>[] = [
     { field: 'name', headerName: 'Name', editable: true, flex: 2 },

@@ -11,6 +11,7 @@ import {
   ValueSetterParams,
   themeQuartz
 } from 'ag-grid-community';
+import { CellSelectionModule, ClipboardModule } from 'ag-grid-enterprise';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 
 import { ModuleWithGroup } from '../../core/models/module.model';
@@ -24,7 +25,7 @@ import { ScheduleModuleService } from '../../core/services/schedule-module.servi
 import { extractErrorMessage } from '../../core/util/http-error';
 import { formatRelativeTime, INVALID_RELATIVE_TIME, parseRelativeTime } from '../../core/util/orbit-time';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllCommunityModule, ClipboardModule, CellSelectionModule]);
 
 const ACTIONS_COLUMN_ID = 'actions';
 type EditableField = keyof ScheduleModuleUpdate;
@@ -60,6 +61,8 @@ export class ScheduleModuleTable {
     sortable: true,
     filter: true
   };
+
+  readonly cellSelection = true;
 
   readonly columnDefs: ColDef<ScheduleModuleWithModule>[] = [
     {
