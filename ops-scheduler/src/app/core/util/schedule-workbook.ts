@@ -12,8 +12,8 @@ import {
   scheduleModuleElapsedSeconds,
 } from './orbit-time';
 
-const DATE_FORMAT = 'yyyy-mm-dd hh:mm:ss\\.000';
-const RELATIVE_SECONDS_FORMAT = '0\\.000';
+const DATE_FORMAT = 'yyyy-mm-dd hh:mm:ss.000';
+const RELATIVE_SECONDS_FORMAT = '0.000';
 const NO_GROUP_LABEL = '(no group)';
 const HEADER_FILL_COLOR = 'FFD9D9D9';
 
