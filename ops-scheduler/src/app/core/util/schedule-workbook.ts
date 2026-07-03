@@ -1,6 +1,7 @@
 import { Fill, Workbook } from 'exceljs';
 
 import { Command } from '../models/command.model';
+import { Module } from '../models/module.model';
 import { ScheduleModuleWithModule } from '../models/schedule-module.model';
 import { Schedule } from '../models/schedule.model';
 import { buildModuleColorMap } from './module-colors';
@@ -8,6 +9,7 @@ import {
   absoluteTimeAtElapsedSeconds,
   commandElapsedSeconds,
   formatDurationSeconds,
+  formatRelativeTime,
   orbitPositionAtElapsedSeconds,
   scheduleModuleElapsedSeconds,
 } from './orbit-time';
@@ -16,6 +18,11 @@ const DATE_FORMAT = 'yyyy-mm-dd hh:mm:ss.000';
 const RELATIVE_SECONDS_FORMAT = '0.000';
 const NO_GROUP_LABEL = '(no group)';
 const HEADER_FILL_COLOR = 'FFD9D9D9';
+const MTL_HEADER_FILL_COLOR = 'FF5983B0';
+const OPS_HEADER_FILL_COLOR = 'FF00A933';
+const RESERVED_SHEET_NAMES = ['commands', 'timeline'];
+const INVALID_SHEET_NAME_CHARS = /[\\/?*[\]:]/g;
+const MAX_SHEET_NAME_LENGTH = 31;
 
 interface CommandEvent {
   scheduleModule: ScheduleModuleWithModule;
@@ -84,6 +91,7 @@ export function buildScheduleWorkbook(
 
   buildCommandsSheet(workbook, schedule, events, colorByModuleId);
   buildTimelineSheet(workbook, schedule, blocks, colorByModuleId);
+  buildModuleGroupSheets(workbook, scheduleModules, commandsByModuleId);
 
   return workbook;
 }
@@ -268,4 +276,110 @@ function buildTimelineSheet(
       );
     }
   }
+}
+
+interface ModuleGroupSheetData {
+  subschedule: number | undefined;
+  modules: Module[];
+}
+
+function sanitizeSheetName(name: string, usedNames: Set<string>): string {
+  const base = name.replace(INVALID_SHEET_NAME_CHARS, ' ').trim().slice(0, MAX_SHEET_NAME_LENGTH);
+  let candidate = base || 'Group';
+  let suffix = 2;
+  while (usedNames.has(candidate.toLowerCase())) {
+    const suffixText = ` (${suffix})`;
+    candidate = (base || 'Group').slice(0, MAX_SHEET_NAME_LENGTH - suffixText.length) + suffixText;
+    suffix++;
+  }
+  usedNames.add(candidate.toLowerCase());
+  return candidate;
+}
+
+function buildModuleGroupSheets(
+  workbook: Workbook,
+  scheduleModules: ScheduleModuleWithModule[],
+  commandsByModuleId: Map<number, Command[]>,
+): void {
+  const groups = new Map<string, ModuleGroupSheetData>();
+
+  for (const scheduleModule of scheduleModules) {
+    const module = scheduleModule.module;
+    const groupName = module.module_group?.name ?? NO_GROUP_LABEL;
+    let group = groups.get(groupName);
+    if (!group) {
+      group = { subschedule: module.module_group?.subschedule, modules: [] };
+      groups.set(groupName, group);
+    }
+    if (!group.modules.some((existing) => existing.id === module.id)) {
+      group.modules.push(module);
+    }
+  }
+
+  const usedSheetNames = new Set<string>(RESERVED_SHEET_NAMES);
+  for (const groupName of Array.from(groups.keys()).sort()) {
+    const { subschedule, modules } = groups.get(groupName)!;
+    buildModuleGroupSheet(
+      workbook,
+      groupName,
+      subschedule,
+      modules,
+      commandsByModuleId,
+      usedSheetNames,
+    );
+  }
+}
+
+function buildModuleGroupSheet(
+  workbook: Workbook,
+  groupName: string,
+  subschedule: number | undefined,
+  modules: Module[],
+  commandsByModuleId: Map<number, Command[]>,
+  usedSheetNames: Set<string>,
+): void {
+  const sheet = workbook.addWorksheet(sanitizeSheetName(groupName, usedSheetNames));
+  sheet.columns = [
+    { key: 'value', width: 20, style: { alignment: { horizontal: 'left' } } },
+    { key: 'command', width: 256 },
+  ];
+
+  const groupHeaderRow = sheet.addRow([
+    groupName,
+    subschedule !== undefined ? `SSchId=${subschedule}` : '',
+  ]);
+  groupHeaderRow.font = { bold: true };
+  sheet.addRow([]);
+
+  modules.forEach((module, index) => {
+    if (index > 0) {
+      sheet.addRow([]);
+      sheet.addRow([]);
+    }
+
+    const nameTypeRow = sheet.addRow([module.name, module.type]);
+    const nameTypeFillColor = module.type === 'OPS' ? OPS_HEADER_FILL_COLOR : MTL_HEADER_FILL_COLOR;
+    nameTypeRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.fill = solidFill(nameTypeFillColor);
+    });
+
+    const valueHeader = module.type === 'OPS' ? 'Relative angle (°)' : 'Relative time';
+    const commandHeaderRow = sheet.addRow([valueHeader, 'Command']);
+    commandHeaderRow.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.fill = solidFill(HEADER_FILL_COLOR);
+    });
+
+    const commands = commandsByModuleId.get(module.id) ?? [];
+    for (const command of commands) {
+      const value =
+        module.type === 'OPS'
+          ? command.relative_orbit_angle != null
+            ? round(command.relative_orbit_angle, 3)
+            : null
+          : formatRelativeTime(command.relative_time);
+      sheet.addRow([value, command.name]);
+    }
+  });
 }
