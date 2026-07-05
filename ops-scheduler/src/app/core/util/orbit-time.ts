@@ -1,7 +1,7 @@
 import { Duration } from 'luxon';
 
 import { Command } from '../models/command.model';
-import { Module } from '../models/module.model';
+import { Module, ModuleType } from '../models/module.model';
 import { ScheduleModule } from '../models/schedule-module.model';
 import { Schedule } from '../models/schedule.model';
 
@@ -50,6 +50,20 @@ export function commandElapsedSeconds(
   return (
     moduleStart + ((command.relative_orbit_angle ?? 0) / 360) * schedule.orbit_duration_seconds
   );
+}
+
+/**
+ * Value by which commands within a module should be ordered: elapsed seconds (relative_time)
+ * for MTL modules, orbit angle in degrees (relative_orbit_angle) for OPS modules.
+ */
+export function commandOrderValue(
+  moduleType: ModuleType,
+  command: Pick<Command, 'relative_time' | 'relative_orbit_angle'>,
+): number {
+  if (moduleType === 'MTL') {
+    return command.relative_time != null ? isoDurationSeconds(command.relative_time) : 0;
+  }
+  return command.relative_orbit_angle ?? 0;
 }
 
 /** Orbit number/angle at a given number of seconds elapsed since the schedule's start_time. */

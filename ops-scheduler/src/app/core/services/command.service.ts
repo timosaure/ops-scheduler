@@ -14,7 +14,10 @@ export class CommandService {
 
   listByModule(moduleId: number): Observable<Command[]> {
     return this.http.get<Command[]>(this.baseUrl, {
-      params: { module_id: `eq.${moduleId}`, order: 'id.asc' }
+      params: {
+        module_id: `eq.${moduleId}`,
+        order: 'relative_time.asc,relative_orbit_angle.asc,id.asc'
+      }
     });
   }
 
@@ -23,7 +26,10 @@ export class CommandService {
       return of([]);
     }
     return this.http.get<Command[]>(this.baseUrl, {
-      params: { module_id: `in.(${moduleIds.join(',')})`, order: 'module_id.asc,id.asc' }
+      params: {
+        module_id: `in.(${moduleIds.join(',')})`,
+        order: 'module_id.asc,relative_time.asc,relative_orbit_angle.asc,id.asc'
+      }
     });
   }
 

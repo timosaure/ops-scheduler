@@ -17,7 +17,12 @@ import { ModuleType } from '../../core/models/module.model';
 import { Command, CommandUpdate } from '../../core/models/command.model';
 import { CommandService } from '../../core/services/command.service';
 import { extractErrorMessage } from '../../core/util/http-error';
-import { formatRelativeTime, INVALID_RELATIVE_TIME, parseRelativeTime } from '../../core/util/orbit-time';
+import {
+  commandOrderValue,
+  formatRelativeTime,
+  INVALID_RELATIVE_TIME,
+  parseRelativeTime
+} from '../../core/util/orbit-time';
 
 ModuleRegistry.registerModules([AllCommunityModule, ClipboardModule, CellSelectionModule]);
 
@@ -45,7 +50,7 @@ export class CommandTable {
 
   readonly defaultColDef: ColDef<Command> = {
     resizable: true,
-    sortable: true,
+    sortable: false,
     filter: true
   };
 
@@ -98,12 +103,20 @@ export class CommandTable {
     });
   }
 
+  private sortRows(rows: Command[]): Command[] {
+    const moduleType = this.moduleType();
+    return [...rows].sort((a, b) => {
+      const diff = commandOrderValue(moduleType, a) - commandOrderValue(moduleType, b);
+      return diff !== 0 ? diff : a.id - b.id;
+    });
+  }
+
   private load(moduleId: number): void {
     this.loading.set(true);
     this.error.set(null);
     this.commandService.listByModule(moduleId).subscribe({
       next: (commands) => {
-        this.rowData.set(commands);
+        this.rowData.set(this.sortRows(commands));
         this.loading.set(false);
       },
       error: (err: unknown) => {
@@ -125,7 +138,7 @@ export class CommandTable {
       })
       .subscribe({
         next: (created) => {
-          this.rowData.update((rows) => [...rows, created]);
+          this.rowData.update((rows) => this.sortRows([...rows, created]));
           this.creating.set(false);
         },
         error: (err: unknown) => {
@@ -155,7 +168,9 @@ export class CommandTable {
     this.error.set(null);
     this.commandService.update(command.id, changes).subscribe({
       next: (updated) => {
-        this.rowData.update((rows) => rows.map((row) => (row.id === updated.id ? updated : row)));
+        this.rowData.update((rows) =>
+          this.sortRows(rows.map((row) => (row.id === updated.id ? updated : row)))
+        );
       },
       error: (err: unknown) => {
         this.error.set(extractErrorMessage(err));
