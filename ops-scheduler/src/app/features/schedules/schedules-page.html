@@ -10,17 +10,37 @@
     @if (selectedSchedule(); as schedule) {
       <div class="flex items-start justify-between gap-4">
         <app-schedule-properties class="min-w-0 flex-1" [schedule]="schedule" (updated)="onScheduleUpdated($event)" />
-        <button
-          class="flex-none rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          type="button"
-          [disabled]="exporting()"
-          (click)="exportToExcel()"
-        >
-          {{ exporting() ? 'Exporting…' : 'Export to Excel' }}
-        </button>
+        <div class="flex flex-none gap-2">
+          <button
+            class="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            type="button"
+            [disabled]="exporting()"
+            (click)="exportToExcel()"
+          >
+            {{ exporting() ? 'Exporting…' : 'Export to Excel' }}
+          </button>
+          <button
+            class="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            type="button"
+            [disabled]="exporting()"
+            (click)="exportToJava()"
+          >
+            {{ exporting() ? 'Exporting…' : 'Export to Java' }}
+          </button>
+        </div>
       </div>
       @if (exportError(); as message) {
         <p class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ message }}</p>
+      }
+      @if (exportWarnings(); as warnings) {
+        <div class="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p class="font-medium">Some commands could not be translated and were left as TODOs in the exported file:</p>
+          <ul class="mt-1 list-disc pl-5">
+            @for (warning of warnings; track warning) {
+              <li>{{ warning }}</li>
+            }
+          </ul>
+        </div>
       }
       <div class="min-h-0 flex-1">
         <app-schedule-module-table [scheduleId]="schedule.id" />

@@ -26,6 +26,7 @@ function makeScheduleModule(deltaOrbitNumber: number | null, deltaOrbitAngle: nu
     delta_orbit_number: deltaOrbitNumber,
     delta_orbit_angle: deltaOrbitAngle,
     upload: 'LIVE',
+    position: 0,
     created_at: '2026-01-01T00:00:00Z'
   };
 }
