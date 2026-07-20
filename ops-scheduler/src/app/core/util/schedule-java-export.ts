@@ -1,7 +1,7 @@
 import { DateTime, Duration } from 'luxon';
 
 import { Command } from '../models/command.model';
-import { Module } from '../models/module.model';
+import { Module, ModuleUpload } from '../models/module.model';
 import { ScheduleModuleWithModule } from '../models/schedule-module.model';
 import { Schedule } from '../models/schedule.model';
 import {
@@ -129,23 +129,57 @@ function buildOpsLine(
   return `invoke(new ${className}()${parsed.chain}.OrbitNumber(orbitNumber).OrbitAng(${angleExpr}).Ssid(${subschedule}).Groupid(${GROUP_ID}).RepeatCycle(${REPEAT_CYCLE}));`;
 }
 
+/** Milliseconds from a module's start to when a command executes, assuming constant angular velocity for OPS modules. */
+function commandOffsetMs(
+  moduleType: Module['type'],
+  command: Command,
+  orbitDurationSeconds: number,
+): number {
+  if (moduleType === 'MTL') {
+    return command.relative_time != null
+      ? Math.round(Duration.fromISO(command.relative_time).as('milliseconds'))
+      : 0;
+  }
+  const angle = command.relative_orbit_angle ?? 0;
+  return Math.round((angle / 360) * orbitDurationSeconds * 1000);
+}
+
 function buildMethodBody(
   module: Module,
   subschedule: number,
+  upload: ModuleUpload,
   commands: Command[],
+  orbitDurationSeconds: number,
   warnings: string[],
 ): string[] {
   const sorted = [...commands].sort(
     (a, b) => commandOrderValue(module.type, a) - commandOrderValue(module.type, b),
   );
   const lines: string[] = [];
+  let previousOffsetMs = 0;
   for (const command of sorted) {
     const parsed = parseInvocation(command.name);
-    const line = parsed
-      ? module.type === 'MTL'
+    if (!parsed) {
+      warnings.push(`Module "${module.name}": could not parse command "${command.name}"`);
+      lines.push(`    // TODO: could not parse command, insert manually: ${escapeForComment(command.name)}`);
+      continue;
+    }
+
+    if (upload === 'LIVE') {
+      const offsetMs = commandOffsetMs(module.type, command, orbitDurationSeconds);
+      const deltaMs = offsetMs - previousOffsetMs;
+      if (deltaMs !== 0) {
+        lines.push(`    waitFor(DateTimeUtil.duration(${deltaMs}, UnitsEapl.ms));`);
+      }
+      lines.push(`    invoke(new ${parsed.className}()${parsed.chain});`);
+      previousOffsetMs = offsetMs;
+      continue;
+    }
+
+    const line =
+      module.type === 'MTL'
         ? buildMtlLine(parsed, subschedule, command)
-        : buildOpsLine(parsed, subschedule, command)
-      : null;
+        : buildOpsLine(parsed, subschedule, command);
     if (line) {
       lines.push(`    ${line}`);
     } else {
@@ -159,7 +193,9 @@ function buildMethodBody(
 function buildMethod(
   module: Module,
   subschedule: number,
+  upload: ModuleUpload,
   commands: Command[],
+  orbitDurationSeconds: number,
   methodName: string,
   warnings: string[],
 ): string {
@@ -167,7 +203,7 @@ function buildMethod(
     module.type === 'MTL'
       ? `public void ${methodName}(IAbsoluteTime baseTime) {`
       : `public void ${methodName}(int orbitNumber, double deltaAngle) {`;
-  const body = buildMethodBody(module, subschedule, commands, warnings);
+  const body = buildMethodBody(module, subschedule, upload, commands, orbitDurationSeconds, warnings);
   return [signature, ...body, '}'].join('\n');
 }
 
@@ -185,15 +221,20 @@ function buildBodyCall(
   return `${methodName}(${orbitNumber}, ${round(orbitAngle, 3)});`;
 }
 
+function moduleMethodKey(moduleId: number, upload: ModuleUpload): string {
+  return `${moduleId}:${upload}`;
+}
+
 function buildBodyMethod(
   schedule: Schedule,
   scheduleModules: ScheduleModuleWithModule[],
-  methodNameByModuleId: Map<number, string>,
+  methodNameByKey: Map<string, string>,
 ): string {
-  // Every module_id here was used to populate methodNameByModuleId below, so the lookup always hits.
-  const body = scheduleModules.map(
-    (scheduleModule) => `    ${buildBodyCall(schedule, scheduleModule, methodNameByModuleId.get(scheduleModule.module_id)!)}`,
-  );
+  // Every (module_id, upload) key here was used to populate methodNameByKey below, so the lookup always hits.
+  const body = scheduleModules.map((scheduleModule) => {
+    const key = moduleMethodKey(scheduleModule.module_id, scheduleModule.upload);
+    return `    ${buildBodyCall(schedule, scheduleModule, methodNameByKey.get(key)!)}`;
+  });
   return ['public void body() {', ...body, '}'].join('\n');
 }
 
@@ -202,11 +243,12 @@ export function buildScheduleJavaSource(
   scheduleModules: ScheduleModuleWithModule[],
   commandsByModuleId: Map<number, Command[]>,
 ): JavaExportResult {
-  const seenModuleIds = new Set<number>();
+  const seenKeys = new Set<string>();
   const distinctModules: ScheduleModuleWithModule[] = [];
   for (const scheduleModule of scheduleModules) {
-    if (!seenModuleIds.has(scheduleModule.module_id)) {
-      seenModuleIds.add(scheduleModule.module_id);
+    const key = moduleMethodKey(scheduleModule.module_id, scheduleModule.upload);
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
       distinctModules.push(scheduleModule);
     }
   }
@@ -214,22 +256,35 @@ export function buildScheduleJavaSource(
   distinctModules.sort((a, b) => {
     const groupA = a.module.module_group?.name ?? '';
     const groupB = b.module.module_group?.name ?? '';
-    return groupA.localeCompare(groupB) || a.module.name.localeCompare(b.module.name);
+    return (
+      groupA.localeCompare(groupB) ||
+      a.module.name.localeCompare(b.module.name) ||
+      a.upload.localeCompare(b.upload)
+    );
   });
 
   const warnings: string[] = [];
   const usedNames = new Map<string, number>();
-  const methodNameByModuleId = new Map<number, string>();
+  const methodNameByKey = new Map<string, string>();
   const methods = distinctModules.map((scheduleModule) => {
     const module = scheduleModule.module;
     const subschedule = module.module_group?.subschedule ?? 0;
     const commands = commandsByModuleId.get(module.id) ?? [];
-    const methodName = toJavaMethodName(module.name, usedNames);
-    methodNameByModuleId.set(module.id, methodName);
-    return buildMethod(module, subschedule, commands, methodName, warnings);
+    const rawName = scheduleModule.upload === 'LIVE' ? `${module.name} Live` : module.name;
+    const methodName = toJavaMethodName(rawName, usedNames);
+    methodNameByKey.set(moduleMethodKey(module.id, scheduleModule.upload), methodName);
+    return buildMethod(
+      module,
+      subschedule,
+      scheduleModule.upload,
+      commands,
+      schedule.orbit_duration_seconds,
+      methodName,
+      warnings,
+    );
   });
 
-  const bodyMethod = buildBodyMethod(schedule, scheduleModules, methodNameByModuleId);
+  const bodyMethod = buildBodyMethod(schedule, scheduleModules, methodNameByKey);
 
   return { source: [...methods, bodyMethod].join('\n\n') + '\n', warnings };
 }
